@@ -1,7 +1,7 @@
 import os
 import requests
 from urlparse import urlparse
-from boto.ec2.cloudwatch import CloudWatchConnection
+from boto.ec2.cloudwatch import *
 
 class RabbitmqCloudwatchException(Exception):
     pass
@@ -10,6 +10,8 @@ def main():
     queues = os.getenv('RABBITMQ_CLOUWATCH_QUEUES', '').split(',')
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    aws_region = os.getenv('AWS_REGION_NAME', 'us-west-1')
+
     cloudwatch_namespace = os.getenv(
         'RABBITMQ_CLOUWATCH_NAMESPACE', 'rabbitmq_cloudwatch')
 
@@ -30,7 +32,7 @@ def main():
     if not all([aws_access_key_id, aws_secret_access_key]):
         raise RabbitmqCloudwatchException('Invalid AWS Credentials')
 
-    cwc = CloudWatchConnection(aws_access_key_id, aws_secret_access_key)
+    cwc = connect_to_region(aws_region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
     for queue in queues:
 
