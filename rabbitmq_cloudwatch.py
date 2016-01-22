@@ -1,5 +1,6 @@
 import os
 import requests
+import urllib
 from urlparse import urlparse
 from boto.ec2.cloudwatch import *
 
@@ -36,21 +37,23 @@ def main():
 
     for queue in queues:
 
-        response = requests.get(broker_url.geturl() + queue)
+        vhost, queue = queue.split('=')
+        response = requests.get(broker_url.geturl() + urllib.quote_plus(vhost) + '/' + queue)
 
         if response.status_code == 200:
             queue_messages = response.json()['messages']
 
-            print 'Queue {} currently has {} messages'.format(
-                queue, queue_messages)
+            print 'Queue {} on vhost {} currently has {} messages'.format(
+                queue, vhost, queue_messages)
 
-            cwc.put_metric_data(cloudwatch_namespace, queue, queue_messages)
+	    metric_name = vhost + '/' + queue
+            cwc.put_metric_data(cloudwatch_namespace, metric_name, queue_messages)
         else:
             raise RabbitmqCloudwatchException(
                 'Unable to fetch queue {} from url: {}. '
                 'Error: {}={}'.format(
                     queue,
-                    broker_url.geturl() + queue,
+                    broker_url.geturl() + urllib.quote_plus(vhost) + '/' + queue,
                     response.status_code,
                     response.reason))
 
